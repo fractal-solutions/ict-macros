@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Clock, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { CountdownTimer } from '@/components/countdown-timer';
-import { formatTimeRange } from '@/lib/time-utils';
+import { formatShortDuration, formatTimeRange } from '@/lib/time-utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type TimeWindowStatus = 'active' | 'upcoming' | 'inactive';
@@ -107,7 +107,11 @@ export function TimeWindow({
         
         <div className="flex items-center gap-2">
           <Badge variant="outline" className={colorClasses[color].badge[status]}>
-            {status === 'active' ? 'Active' : status === 'upcoming' ? 'Upcoming' : 'Inactive'}
+            {status === 'active' ? (
+              <>
+                Active
+              </>
+            ) : status === 'upcoming' ? 'Upcoming' : 'Inactive'}
           </Badge>
           
           <div className="flex items-center text-xs text-muted-foreground">

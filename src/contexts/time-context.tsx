@@ -33,11 +33,21 @@ export function TimeProvider({ children }: TimeProviderProps) {
     });
     
     const parts = estFormatter.formatToParts(date);
+    let hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+    const dayPeriod = parts.find(p => p.type === 'dayPeriod')?.value;
+    
+    // Convert 12-hour format to 24-hour format if needed
+    if (dayPeriod === 'PM' && hour < 12) {
+      hour += 12;
+    } else if (dayPeriod === 'AM' && hour === 12) {
+      hour = 0;
+    }
+    
     const estDate = new Date(
       parseInt(parts.find(p => p.type === 'year')?.value || '0'),
       parseInt(parts.find(p => p.type === 'month')?.value || '0') - 1,
       parseInt(parts.find(p => p.type === 'day')?.value || '0'),
-      parseInt(parts.find(p => p.type === 'hour')?.value || '0'),
+      hour,
       parseInt(parts.find(p => p.type === 'minute')?.value || '0'),
       parseInt(parts.find(p => p.type === 'second')?.value || '0')
     );

@@ -239,6 +239,19 @@ export function formatDuration(ms: number): string {
   ].join(':');
 }
 
+export function formatShortDuration(ms: number): string {
+  if (ms <= 0) return '0m';
+  
+  const totalMinutes = Math.floor(ms / (1000 * 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+}
+
 // Find all active sessions based on current time
 export function findActiveSession(currentTime: Date) {
   const activeSessions = sessionsData.filter(session => {

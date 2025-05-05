@@ -5,7 +5,8 @@ import {
   findActiveKillzone, 
   findActiveMacro,
   formatTimeWithSeconds,
-  getTimeWindowStatus
+  getTimeWindowStatus,
+  formatShortDuration
 } from '@/lib/time-utils';
 import { sessionsData, killzonesData, macrosData } from '@/lib/trading-data';
 import { Badge } from '@/components/ui/badge';
@@ -14,9 +15,9 @@ export function TimeOverview() {
   const { currentTime, estTime, timezone } = useTime();
   const [localTimeString, setLocalTimeString] = useState('');
   const [estTimeString, setEstTimeString] = useState('');
-  const [activeSessions, setActiveSessions] = useState<string[]>([]);
-  const [activeKillzones, setActiveKillzones] = useState<string[]>([]);
-  const [activeMacros, setActiveMacros] = useState<string[]>([]);
+  const [activeSessions, setActiveSessions] = useState<Array<{name: string, endTime: string}>>([]);
+  const [activeKillzones, setActiveKillzones] = useState<Array<{name: string, endTime: string}>>([]);
+  const [activeMacros, setActiveMacros] = useState<Array<{name: string, endTime: string}>>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<string[]>([]);
   const [upcomingKillzones, setUpcomingKillzones] = useState<string[]>([]);
   const [upcomingMacros, setUpcomingMacros] = useState<string[]>([]);
@@ -26,34 +27,36 @@ export function TimeOverview() {
       //console.log('Current EST time:', estTime.toISOString());
       
       // Update all the active and upcoming statuses using EST time
-      const activeSessions = sessionsData.filter(session => {
-        const status = getTimeWindowStatus(estTime, session.startTime, session.endTime, 'America/New_York');
-        //console.log(`Session ${session.name} (${session.startTime}-${session.endTime} EST):`, status);
-        return status === 'active';
-      });
-      const activeKillzones = killzonesData.filter(killzone =>
-        getTimeWindowStatus(estTime, killzone.startTime, killzone.endTime, 'America/New_York') === 'active'
-      );
-      const activeMacros = macrosData.filter(macro =>
-        getTimeWindowStatus(estTime, macro.startTime, macro.endTime, 'America/New_York') === 'active'
-      );
+      const activeSessions = sessionsData
+        .filter(session => getTimeWindowStatus(estTime, session.startTime, session.endTime, 'America/New_York') === 'active')
+        .map(s => ({ name: s.name, endTime: s.endTime }));
       
-      const upcomingSessions = sessionsData.filter(session =>
-        getTimeWindowStatus(estTime, session.startTime, session.endTime, 'America/New_York') === 'upcoming'
-      );
-      const upcomingKillzones = killzonesData.filter(killzone =>
-        getTimeWindowStatus(estTime, killzone.startTime, killzone.endTime, 'America/New_York') === 'upcoming'
-      );
-      const upcomingMacros = macrosData.filter(macro =>
-        getTimeWindowStatus(estTime, macro.startTime, macro.endTime, 'America/New_York') === 'upcoming'
-      );
+      const activeKillzones = killzonesData
+        .filter(killzone => getTimeWindowStatus(estTime, killzone.startTime, killzone.endTime, 'America/New_York') === 'active')
+        .map(k => ({ name: k.name, endTime: k.endTime }));
       
-      setActiveSessions(activeSessions.map(s => s.name));
-      setActiveKillzones(activeKillzones.map(k => k.name));
-      setActiveMacros(activeMacros.map(m => m.name));
-      setUpcomingSessions(upcomingSessions.map(s => s.name));
-      setUpcomingKillzones(upcomingKillzones.map(k => k.name));
-      setUpcomingMacros(upcomingMacros.map(m => m.name));
+      const activeMacros = macrosData
+        .filter(macro => getTimeWindowStatus(estTime, macro.startTime, macro.endTime, 'America/New_York') === 'active')
+        .map(m => ({ name: m.name, endTime: m.endTime }));
+      
+      const upcomingSessions = sessionsData
+        .filter(session => getTimeWindowStatus(estTime, session.startTime, session.endTime, 'America/New_York') === 'upcoming')
+        .map(s => s.name);
+      
+      const upcomingKillzones = killzonesData
+        .filter(killzone => getTimeWindowStatus(estTime, killzone.startTime, killzone.endTime, 'America/New_York') === 'upcoming')
+        .map(k => k.name);
+      
+      const upcomingMacros = macrosData
+        .filter(macro => getTimeWindowStatus(estTime, macro.startTime, macro.endTime, 'America/New_York') === 'upcoming')
+        .map(m => m.name);
+      
+      setActiveSessions(activeSessions);
+      setActiveKillzones(activeKillzones);
+      setActiveMacros(activeMacros);
+      setUpcomingSessions(upcomingSessions);
+      setUpcomingKillzones(upcomingKillzones);
+      setUpcomingMacros(upcomingMacros);
       
       // Format both local and EST times
       setLocalTimeString(formatTimeWithSeconds(currentTime, timezone));
@@ -95,10 +98,17 @@ export function TimeOverview() {
             {activeSessions.length > 0 ? (
               activeSessions.map(session => (
                 <Badge
-                  key={session}
-                  className="bg-blue-900/80 hover:bg-blue-800 text-blue-100 border-blue-700"
+                  key={session.name}
+                  className="relative bg-blue-900/80 hover:bg-blue-800 text-blue-100 border-blue-700 pr-6"
                 >
-                  {session}
+                  {session.name}
+                  <Badge className="absolute -right-3 -top-1 -m-0.5 px-0.5 py-0 text-[9px] bg-white border-white animate-pulse">
+                    {formatShortDuration(
+                      new Date(
+                        `${estTime.getFullYear()}-${estTime.getMonth()+1}-${estTime.getDate()} ${session.endTime}:00`
+                      ).getTime() - estTime.getTime()
+                    )}
+                  </Badge>
                 </Badge>
               ))
             ) : (
@@ -131,10 +141,17 @@ export function TimeOverview() {
             {activeKillzones.length > 0 ? (
               activeKillzones.map(killzone => (
                 <Badge
-                  key={killzone}
-                  className="bg-orange-900/80 hover:bg-orange-800 text-orange-100 border-orange-700"
+                  key={killzone.name}
+                  className="relative bg-orange-900/80 hover:bg-orange-800 text-orange-100 border-orange-700 pr-6"
                 >
-                  {killzone}
+                  {killzone.name}
+                  <Badge className="absolute -right-3 -top-1 -m-0.5 px-0.5 py-0 text-[9px] bg-white border-white animate-pulse">
+                    {formatShortDuration(
+                      new Date(
+                        `${estTime.getFullYear()}-${estTime.getMonth()+1}-${estTime.getDate()} ${killzone.endTime}:00`
+                      ).getTime() - estTime.getTime()
+                    )}
+                  </Badge>
                 </Badge>
               ))
             ) : (
@@ -167,10 +184,17 @@ export function TimeOverview() {
             {activeMacros.length > 0 ? (
               activeMacros.map(macro => (
                 <Badge
-                  key={macro}
-                  className="bg-green-900/80 hover:bg-green-800 text-green-100 border-green-700"
+                  key={macro.name}
+                  className="relative bg-green-900/80 hover:bg-green-800 text-green-100 border-green-700 pr-6"
                 >
-                  {macro}
+                  {macro.name}
+                  <Badge className="absolute -right-3 -top-1 -m-0.5 px-0.5 py-0 text-[9px] bg-white border-white animate-pulse">
+                    {formatShortDuration(
+                      new Date(
+                        `${estTime.getFullYear()}-${estTime.getMonth()+1}-${estTime.getDate()} ${macro.endTime}:00`
+                      ).getTime() - estTime.getTime()
+                    )}
+                  </Badge>
                 </Badge>
               ))
             ) : (
