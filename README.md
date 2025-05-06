@@ -2,10 +2,10 @@ I try to update the build in the 'dist' directory accordingly, so to use, just s
 Easiest way is to use Bun.
 
 ```
-bun dist/index.js
+bun dist/index.html
 ```
 or
 ```
-bun index.js
+bun index.html
 ```
 with terminal at /dist
